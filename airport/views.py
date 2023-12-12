@@ -1,6 +1,8 @@
 import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
@@ -103,6 +105,23 @@ class RouteViewSet(
 
         return super().get_serializer_class()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=OpenApiTypes.INT,
+                description="Filter by source id (ex. ?source=2)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=OpenApiTypes.INT,
+                description="Filter by destination id (ex. ?destination=2)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class FlightViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -120,22 +139,22 @@ class FlightViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
-        departure_date = self.request.query_params.get("departure_date")
-        arrival_date = self.request.query_params.get("arrival_date")
+        departure_date = self.request.query_params.get("departure_time")
+        arrival_date = self.request.query_params.get("arrival_time")
         airplane_id_str = self.request.query_params.get("airplane")
 
         queryset = self.queryset
 
         if departure_date:
             departure_date = datetime.strptime(departure_date, "%Y-%m-%d").date()
-            queryset = queryset.filter(departure_date__date=departure_date)
+            queryset = queryset.filter(departure_time__date=departure_date)
 
         if arrival_date:
             arrival_date = datetime.strptime(arrival_date, "%Y-%m-%d").date()
-            queryset = queryset.filter(arrival_date__date=arrival_date)
+            queryset = queryset.filter(arrival_time__date=arrival_date)
 
         if airplane_id_str:
-            queryset = queryset.filter(movie_id=int(airplane_id_str))
+            queryset = queryset.filter(airplane_id=int(airplane_id_str))
 
         return queryset
 
@@ -147,6 +166,34 @@ class FlightViewSet(viewsets.ModelViewSet):
             return FlightDetailSerializer
 
         return super().get_serializer_class()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "airplane",
+                type=OpenApiTypes.INT,
+                description="Filter by airplane id (ex. ?airplane=2)",
+            ),
+            OpenApiParameter(
+                "departure_date",
+                type=OpenApiTypes.DATE,
+                description=(
+                        "Filter by departure date of Flight "
+                        "(ex. ?date=2022-10-23)"
+                ),
+            ),
+            OpenApiParameter(
+                "arrival_date",
+                type=OpenApiTypes.DATE,
+                description=(
+                        "Filter by arrival date of Flight "
+                        "(ex. ?date=2022-10-23)"
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderViewSet(
