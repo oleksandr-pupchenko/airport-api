@@ -1,3 +1,5 @@
+import datetime
+
 from django.db.models import F, Count
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -78,6 +80,20 @@ class RouteViewSet(
     serializer_class = RouteSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get_queryset(self):
+        source_id_str = self.request.query_params.get("source")
+        destination_id_str = self.request.query_params.get("destination")
+
+        queryset = self.queryset
+
+        if source_id_str:
+            queryset = queryset.filter(source_id=int(source_id_str))
+
+        if destination_id_str:
+            queryset = queryset.filter(destination_id=int(destination_id_str))
+
+        return queryset
+
     def get_serializer_class(self):
         if self.action == "list":
             return RouteListSerializer
@@ -102,6 +118,26 @@ class FlightViewSet(viewsets.ModelViewSet):
     )
     serializer_class = FlightSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_queryset(self):
+        departure_date = self.request.query_params.get("departure_date")
+        arrival_date = self.request.query_params.get("arrival_date")
+        airplane_id_str = self.request.query_params.get("airplane")
+
+        queryset = self.queryset
+
+        if departure_date:
+            departure_date = datetime.strptime(departure_date, "%Y-%m-%d").date()
+            queryset = queryset.filter(departure_date__date=departure_date)
+
+        if arrival_date:
+            arrival_date = datetime.strptime(arrival_date, "%Y-%m-%d").date()
+            queryset = queryset.filter(arrival_date__date=arrival_date)
+
+        if airplane_id_str:
+            queryset = queryset.filter(movie_id=int(airplane_id_str))
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
