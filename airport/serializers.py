@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
-from airport.models import Airport, AirplaneType, Crew, Airplane, Route, Flight
+from airport.models import Airport, AirplaneType, Crew, Airplane, Route, Flight, Ticket
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -73,6 +74,8 @@ class FlightListSerializer(FlightSerializer):
     crews_fullname = serializers.IntegerField(
         source="crew.full_name", read_only=True
     )
+    tickets_available = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Flight
         fields = (
@@ -84,14 +87,52 @@ class FlightListSerializer(FlightSerializer):
             "airplane_name",
             "airplane_capacity",
             "crews_fullname",
+            "tickets_available",
         )
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    def validate(self, attrs):
+        data = super(TicketSerializer, self).validate(attrs=attrs)
+        Ticket.validate_ticket(
+            attrs["row"],
+            attrs["seat"],
+            attrs["flight"].airplane,
+            ValidationError
+        )
+        return data
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+
+class TicketListSerializer(TicketSerializer):
+    flight = FlightListSerializer(many=False, read_only=True)
+
+
+class TicketSeatsSerializer(TicketSerializer):
+    class Meta:
+        model = Ticket
+        fields = ("row", "seat")
 
 
 class FlightDetailSerializer(FlightSerializer):
     route = RouteListSerializer(many=False, read_only=True)
     airplane = AirplaneSerializer(many=False, read_only=True)
     crews = CrewSerializer(many=True, read_only=True)
+    taken_places = TicketSeatsSerializer(
+        source="tickets", many=True, read_only=True
+    )
 
     class Meta:
         model = Flight
-        fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crews")
+        fields = (
+            "id",
+            "route",
+            "airplane",
+            "departure_time",
+            "arrival_time",
+            "crews",
+            "taken_places"
+        )
