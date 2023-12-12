@@ -22,8 +22,7 @@ class Route(models.Model):
     distance = models.IntegerField()
 
     def __str__(self):
-        return f"Flight from {self.source} to {self.destination}. " \
-               f"Estimated distance is {self.distance}."
+        return f"{self.source} - {self.destination}. "
 
     def clean(self):
         different_airports_validator(self)
