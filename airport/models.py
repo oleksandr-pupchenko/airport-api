@@ -116,7 +116,7 @@ class Ticket(models.Model):
         Ticket.validate_ticket(
             self.row,
             self.seat,
-            self.flight.cinema_hall,
+            self.flight.airplane,
             ValidationError,
         )
 

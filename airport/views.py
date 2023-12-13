@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from django.db.models import F, Count
 from drf_spectacular.types import OpenApiTypes
@@ -131,8 +131,8 @@ class FlightViewSet(viewsets.ModelViewSet):
         .prefetch_related("crews")
         .annotate(
             tickets_available=(
-                    F("airplane__rows") * F("airplane__seats_in_row")
-                    - Count("tickets")
+                F("airplane__rows") * F("airplane__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -179,16 +179,16 @@ class FlightViewSet(viewsets.ModelViewSet):
                 "departure_date",
                 type=OpenApiTypes.DATE,
                 description=(
-                        "Filter by departure date of Flight "
-                        "(ex. ?date=2022-10-23)"
+                    "Filter by departure date of Flight "
+                    "(ex. ?date=2022-10-23)"
                 ),
             ),
             OpenApiParameter(
                 "arrival_date",
                 type=OpenApiTypes.DATE,
                 description=(
-                        "Filter by arrival date of Flight "
-                        "(ex. ?date=2022-10-23)"
+                    "Filter by arrival date of Flight "
+                    "(ex. ?date=2022-10-23)"
                 ),
             ),
         ]
@@ -221,7 +221,7 @@ class OrderViewSet(
         if self.action == "list":
             return OrderListSerializer
 
-        return OrderSerializer
+        return super().get_serializer_class()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
